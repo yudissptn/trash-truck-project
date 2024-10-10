@@ -3,51 +3,83 @@ using UnityEngine;
 public class CameraFollow : MonoBehaviour
 {
     public Transform target;
-    public float height = 10f;
-    public float distance = 5f;
+    public float distance = 10f;
+    public float height = 5f;
+    public float angle = 45f;
+    public float orbitSpeed = 5f;
+    public float minVerticalAngle = 20f;
+    public float maxVerticalAngle = 80f;
     public float smoothSpeed = 0.125f;
-    public float mouseSensitivity = 1f;
-    public float maxPanDistance = 5f;
-    public bool invertMouseX = true; // New variable to control Y-axis inversion
-    public bool invertMouseY = true; // New variable to control Y-axis inversion
 
-    private Vector3 currentVelocity;
-    private Vector2 currentPan;
+    private float currentRotationX = 0f;
+    private float currentRotationY = 0f;
+    private Vector3 desiredPosition;
+    private Quaternion desiredRotation;
+
+    void Start()
+    {
+        if (target == null)
+        {
+            Debug.LogError("No target assigned to CameraFollow script!");
+            enabled = false;
+            return;
+        }
+
+        // Set initial rotation
+        currentRotationY = angle;
+        currentRotationX = 180f; // Start behind the player
+
+        // Initialize the camera position
+        UpdateCameraPosition();
+        transform.position = desiredPosition;
+        transform.rotation = desiredRotation;
+    }
 
     void LateUpdate()
     {
-        if (target == null)
-            return;
+        if (target == null) return;
 
-        // Get mouse input for panning
-        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
-        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
+        // Get mouse input
+        float mouseX = Input.GetAxis("Mouse X") * orbitSpeed;
+        float mouseY = Input.GetAxis("Mouse Y") * orbitSpeed;
 
-        // Invert the mouseY if invertMouseY is true
-        if (invertMouseY)
-        {
-            mouseY = -mouseY;
-        }
-         if (invertMouseX)
-        {
-            mouseX = -mouseX;
-        }
+        // Update rotation
+        currentRotationX += mouseX;
+        currentRotationY -= mouseY; // Inverted for intuitive control
+        currentRotationY = Mathf.Clamp(currentRotationY, minVerticalAngle, maxVerticalAngle);
 
-        // Update current pan
-        currentPan += new Vector2(mouseX, mouseY);
-        
-        // Limit pan distance
-        currentPan = Vector2.ClampMagnitude(currentPan, maxPanDistance);
-
-        // Calculate camera position
-        Vector3 targetPosition = target.position;
-        Vector3 cameraPosition = targetPosition + new Vector3(currentPan.x, height, currentPan.y - distance);
+        UpdateCameraPosition();
 
         // Smoothly move the camera
-        transform.position = Vector3.SmoothDamp(transform.position, cameraPosition, ref currentVelocity, smoothSpeed);
+        transform.position = Vector3.Lerp(transform.position, desiredPosition, smoothSpeed);
+        transform.rotation = Quaternion.Slerp(transform.rotation, desiredRotation, smoothSpeed);
+    }
 
-        // Make the camera look at the player's position (not considering height)
-        Vector3 lookAtPosition = new Vector3(targetPosition.x, targetPosition.y, targetPosition.z);
-        transform.LookAt(lookAtPosition);
+    void UpdateCameraPosition()
+    {
+        // Calculate new position
+        Quaternion rotation = Quaternion.Euler(currentRotationY, currentRotationX, 0);
+        Vector3 negDistance = new Vector3(0.0f, 0.0f, -distance);
+        desiredPosition = rotation * negDistance + target.position;
+
+        // Adjust height
+        desiredPosition.y = target.position.y + height;
+
+        // Calculate rotation
+        desiredRotation = Quaternion.LookRotation(target.position - desiredPosition, Vector3.up);
+    }
+
+    public Vector3 GetCameraForward()
+    {
+        Vector3 forward = transform.forward;
+        forward.y = 0; // Project onto the horizontal plane
+        return forward.normalized;
+    }
+
+    public Vector3 GetCameraRight()
+    {
+        Vector3 right = transform.right;
+        right.y = 0; // Project onto the horizontal plane
+        return right.normalized;
     }
 }
