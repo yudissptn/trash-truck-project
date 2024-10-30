@@ -96,6 +96,8 @@ public class AdvancedTruckController : MonoBehaviour
         collider.GetWorldPose(out pos, out rot);
 
         // Assuming you have separate wheel meshes, adjust their position/rotation here
-        // For example: wheelFLMesh.transform.position = pos; wheelFLMesh.transform.rotation = rot;
+        // For example:
+        //  wheelFLMesh.transform.position = pos; 
+        //  wheelFLMesh.transform.rotation = rot;
     }
 }
