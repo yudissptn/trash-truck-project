@@ -1,11 +1,10 @@
 using UnityEngine;
-using UnityEngine.EventSystems;
 
 public class AdvancedTruckController : MonoBehaviour
 {
     public float maxMotorTorque = 3000f;  // Maximum torque the motor can apply
-    public float maxSteeringAngle = 100f;  // Maximum steering angle for the front wheels
-    public float brakeForce = 5000f;      // Brake force applied when braking
+    public float maxSteeringAngle = 15f;  // Maximum steering angle for the front wheels
+    public float brakeForce = 300f;      // Brake force applied when braking
     public Transform centerOfMass;        // Center of mass to stabilize the truck
 
     // Wheel Colliders
@@ -13,6 +12,12 @@ public class AdvancedTruckController : MonoBehaviour
     public WheelCollider wheelFR;
     public WheelCollider wheelRL;
     public WheelCollider wheelRR;
+
+    // Wheel Transforms
+    public Transform wheelFLTransform;
+    public Transform wheelFRTransform;
+    public Transform wheelRLTransform;
+    public Transform wheelRRTransform;
 
     // Input
     private float motorInput;
@@ -30,6 +35,12 @@ public class AdvancedTruckController : MonoBehaviour
         {
             rb.centerOfMass = centerOfMass.localPosition;
         }
+
+        // Rotate wheel meshes 90 degrees around Z-axis to align with X-axis
+        wheelFLTransform.localRotation = Quaternion.Euler(0f, 0f, 90f);
+        wheelFRTransform.localRotation = Quaternion.Euler(0f, 0f, 90f);
+        wheelRLTransform.localRotation = Quaternion.Euler(0f, 0f, 90f);
+        wheelRRTransform.localRotation = Quaternion.Euler(0f, 0f, 90f);
     }
 
     void Update()
@@ -81,13 +92,13 @@ public class AdvancedTruckController : MonoBehaviour
     private void UpdateWheels()
     {
         // Update the visual position of the wheels based on the colliders
-        UpdateWheelPosition(wheelFL);
-        UpdateWheelPosition(wheelFR);
-        UpdateWheelPosition(wheelRL);
-        UpdateWheelPosition(wheelRR);
+        UpdateWheelPosition(wheelFL, wheelFLTransform);
+        UpdateWheelPosition(wheelFR, wheelFRTransform);
+        UpdateWheelPosition(wheelRL, wheelRLTransform);
+        UpdateWheelPosition(wheelRR, wheelRRTransform);
     }
 
-    private void UpdateWheelPosition(WheelCollider collider)
+    private void UpdateWheelPosition(WheelCollider collider, Transform trans)
     {
         // This moves the 3D model of the wheels based on the collider's position
         Vector3 pos;
@@ -95,9 +106,8 @@ public class AdvancedTruckController : MonoBehaviour
 
         collider.GetWorldPose(out pos, out rot);
 
-        // Assuming you have separate wheel meshes, adjust their position/rotation here
-        // For example:
-        //  wheelFLMesh.transform.position = pos; 
-        //  wheelFLMesh.transform.rotation = rot;
+        // Rotate the wheel mesh 90 degrees around Y-axis to align with X-axis
+        trans.position = pos;
+        trans.rotation = Quaternion.Euler(rot.eulerAngles.x, rot.eulerAngles.y, 90f);
     }
 }
